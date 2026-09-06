@@ -1,0 +1,12 @@
+node_modules/
+client/node_modules/
+client/dist/
+data/auction.json
+data/auction.tmp.json
+data/auth.json
+data/backups/
+!data/backups/.gitkeep
+PLAN.md
+.claude/
+.DS_Store
+*.log

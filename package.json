@@ -1,0 +1,26 @@
+{
+  "name": "ipl-auction",
+  "version": "1.0.0",
+  "private": true,
+  "description": "IPL-style player auction - server-authoritative, Socket.IO live updates, JSON store + CSV export",
+  "main": "server.js",
+  "scripts": {
+    "setup": "npm install && npm install --prefix client",
+    "build": "npm run build --prefix client",
+    "start": "node server.js",
+    "dev": "concurrently -n server,client -c cyan,magenta \"node server.js\" \"npm run dev --prefix client\"",
+    "test": "node tests/unit.test.js && node tests/integration.test.js",
+    "test:unit": "node tests/unit.test.js",
+    "test:integration": "node tests/integration.test.js",
+    "reset": "node scripts/reset.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "socket.io-client": "^4.7.5"
+  }
+}

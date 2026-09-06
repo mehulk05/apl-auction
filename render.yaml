@@ -1,0 +1,24 @@
+# Render Blueprint - deploy with "New > Blueprint" and this repo.
+services:
+  - type: web
+    name: ipl-auction
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm install --prefix client && npm run build --prefix client
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
+    # Free instances have an EPHEMERAL disk: every deploy/restart wipes
+    # data/auction.json AND regenerates data/auth.json (new passwords - read
+    # them from the startup log). Fine for trying it out; for a real event
+    # move to the Starter plan and uncomment the disk below.
+    # disk:
+    #   name: auction-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
+    # ...and add:
+    # envVars:
+    #   - key: AUCTION_DATA_DIR
+    #     value: /var/data
