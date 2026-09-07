@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuction, cr } from '../lib/auction.jsx';
 import { TeamPeek } from './ui.jsx';
+import { TeamCrest, PurseBar, purseHealth } from './graphics.jsx';
 
 export function TeamCard({ team, leading, mine, compact, onPeek }) {
   const { snapshot } = useAuction();
@@ -19,7 +20,7 @@ export function TeamCard({ team, leading, mine, compact, onPeek }) {
       <div className="row between" style={{ alignItems: 'flex-start' }}>
         <div>
           <div className="team-name">
-            <span className="dot" style={{ background: team.color }} />
+            <TeamCrest name={team.name} color={team.color} size={26} />
             {team.name}
           </div>
           <div className="team-owner">{team.owner || '—'}</div>
@@ -52,11 +53,14 @@ export function TeamCard({ team, leading, mine, compact, onPeek }) {
         ) : null}
       </div>
 
-      <div className="gauge"><i style={{ width: `${pct}%`, background: team.color }} /></div>
+      <PurseBar purse={team.purse} startingPurse={team.startingPurse} />
       <div className="gauge-note">
-        <span>{team.squadSize >= team.minSquad ? `minimum of ${team.minSquad} met` : `${team.needForMin} more to reach ${team.minSquad}`}</span>
-        <span>{team.captainName ? `★ ${team.captainName}` : ''}</span>
+        <span style={{ color: purseHealth(team.purse, team.startingPurse).color, fontWeight: 600 }}>
+          {Math.round((team.purse / (team.startingPurse || 1)) * 100)}% purse left
+        </span>
+        <span>{team.squadSize}/{team.maxSquad} squad{team.captainName ? ` · ★ ${team.captainName}` : ''}</span>
       </div>
+      <div className="gauge"><i style={{ width: `${pct}%`, background: team.color }} /></div>
     </article>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuction, cr } from '../lib/auction.jsx';
-import { Cat, StatusTag, DataTable, Card, PageHead } from '../components/ui.jsx';
+import { Cat, StatusTag, DataTable, Card, PageHead, PlayerPeek } from '../components/ui.jsx';
 import { PlayerEditor } from '../components/editors.jsx';
 
 const STATUSES = [
@@ -20,6 +20,7 @@ export default function Players() {
   const [cat, setCat] = useState('');
   const [role, setRole] = useState('');
   const [team, setTeam] = useState('');
+  const [peek, setPeek] = useState(null);
 
   const roles = useMemo(() => [...new Set(snapshot.players.map((p) => p.role))].filter(Boolean).sort(), [snapshot.players]);
 
@@ -92,7 +93,7 @@ export default function Players() {
             columns={[
               { key: 'sequence', label: 'Lot', num: true, mono: true, hide: 'sm' },
               { key: 'id', label: 'ID', mono: true, hide: 'md' },
-              { key: 'name', label: 'Player', render: (p) => <b style={{ fontWeight: 600 }}>{p.name}</b> },
+              { key: 'name', label: 'Player', render: (p) => <button type="button" className="linklike" onClick={() => setPeek(p.id)}>{p.name}</button> },
               { key: 'primaryCategory', label: 'Category', render: (p) => <Cat value={p.primaryCategory} /> },
               { key: 'secondaryCategory', label: 'Second', hide: 'md', render: (p) => (p.secondaryCategory ? <Cat value={p.secondaryCategory} /> : '—') },
               { key: 'role', label: 'Role', hide: 'sm' },
@@ -113,6 +114,7 @@ export default function Players() {
       </section>
 
       {editor !== undefined ? <PlayerEditor player={editor} onClose={() => setEditor(undefined)} /> : null}
+      {peek ? <PlayerPeek player={snapshot.players.find((x) => x.id === peek)} onClose={() => setPeek(null)} /> : null}
     </div>
   );
 }

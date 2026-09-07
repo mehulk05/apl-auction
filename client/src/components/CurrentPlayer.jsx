@@ -1,17 +1,30 @@
-import React from 'react';
-import { useAuction, cr, clockTime } from '../lib/auction.jsx';
-import { Cat } from './ui.jsx';
+import React, { useEffect, useState } from 'react';
+import { useAuction, cr } from '../lib/auction.jsx';
+import { Cat, PlayerPeek } from './ui.jsx';
+import { Jersey, TeamCrest, IconClock, timeAgo } from './graphics.jsx';
 
 /**
- * The lot plate — the signature element. A catalogue entry: lot number,
- * name set in the display face, metadata line, then the two figures that
- * decide everything, then the ladder showing how the bid actually climbed.
+ * The spotlight — broadcast style. Left: the player card (jersey, name
+ * banner, stat tiles). Right: the money — current bid, highest bidder's
+ * crest, and a live bid feed with "Ns ago" timestamps.
  */
 export default function CurrentPlayer() {
   const { snapshot } = useAuction();
   const st = snapshot.state;
   const p = snapshot.currentPlayer;
   const bidding = st.status === 'BIDDING';
+  const [peek, setPeek] = useState(false);
+
+  // Keep the "16s ago" stamps ticking while bidding is live.
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!bidding) return undefined;
+    const t = setInterval(() => setNow(Date.now()), 5000);
+    return () => clearInterval(t);
+  }, [bidding]);
+
+  const leader = snapshot.teams.find((t) => t.id === st.highestBidderTeamId);
+  const feed = [...st.bidHistory].reverse().slice(0, 6);
 
   return (
     <section className="lot">
@@ -22,75 +35,86 @@ export default function CurrentPlayer() {
         <span className="state" data-s={st.status}>{st.status.replace('_', ' ')}</span>
       </div>
 
-      <div className="lot-body">
-        {p ? (
-          <>
-            <h1 className="lot-name">{p.name}</h1>
-            <div className="lot-meta">
-              <Cat value={p.primaryCategory} />
-              {p.secondaryCategory ? <Cat value={p.secondaryCategory} /> : null}
-              <span className="small">{p.role}</span>
-              <span className="sep-dot">/</span>
-              <span className="small">Base price <b className="money">{cr(p.basePrice)}</b></span>
-              <span className="sep-dot">/</span>
-              <span className="lot-no">{p.id}</span>
-              {p.timesAuctioned > 1 ? <span className="tag warn">Re-offered · {p.timesAuctioned}nd time</span> : null}
-            </div>
-          </>
-        ) : (
-          <>
-            <h1 className="lot-name vacant">
-              {st.status === 'COMPLETED' ? 'The sale has closed.' : 'No lot on the block.'}
-            </h1>
-            <div className="lot-meta">
-              <span className="small muted">
-                {st.status === 'COMPLETED'
-                  ? 'Every result is in Sold and Unsold.'
-                  : 'The auctioneer opens the next lot from the catalogue.'}
-              </span>
-            </div>
-          </>
-        )}
+      <div className="spotlight">
+        {/* ---------------- the player ---------------- */}
+        <div className="spot-player">
+          {p ? (
+            <>
+              <div className="spot-id">
+                <Jersey name={p.name} color={leader ? leader.color : 'var(--blue-raw)'} size={84} />
+                <div style={{ minWidth: 0 }}>
+                  <button type="button" className="name-banner" onClick={() => setPeek(true)}
+                    title="Open the player profile">
+                    {p.name}
+                  </button>
+                  <div className="row tight" style={{ marginTop: 9, flexWrap: 'wrap' }}>
+                    <Cat value={p.primaryCategory} />
+                    <span className="tag">{p.role}</span>
+                    {p.timesAuctioned > 1 ? <span className="tag warn">Re-offered</span> : null}
+                  </div>
+                </div>
+              </div>
 
-        <div className="figures">
-          <div>
-            <div className="eyebrow">Current bid</div>
-            {st.currentBid === null ? (
-              <div className="figure-v quiet">{p ? `opens at ${cr(p.basePrice)}` : 'no bidding'}</div>
-            ) : (
-              <div className="figure-v live money">{cr(st.currentBid)}</div>
-            )}
-            {bidding && st.nextBid !== null ? (
-              <div className="figure-note">Next valid bid <b className="money">{cr(st.nextBid)}</b> · steps of {cr(snapshot.settings.bidIncrement)}</div>
-            ) : null}
-          </div>
-          <div>
-            <div className="eyebrow">Highest bidder</div>
-            {st.highestBidderName ? (
-              <div className="figure-v bidder">{st.highestBidderName}</div>
-            ) : (
-              <div className="figure-v quiet">no bids yet</div>
-            )}
-            {st.highestBidderName ? (
-              <div className="figure-note">{st.bidHistory.length} bid{st.bidHistory.length === 1 ? '' : 's'} on this lot</div>
-            ) : null}
-          </div>
+              <div className="spot-tiles">
+                <div className="tile"><span className="k">Base price</span><b className="money">{cr(p.basePrice)}</b></div>
+                <div className="tile"><span className="k">Tier</span><b>{p.primaryCategory}</b></div>
+                <div className="tile"><span className="k">Role</span><b>{p.role}</b></div>
+                <div className="tile"><span className="k">Lot no.</span><b className="mono-num">{String(p.sequence).padStart(2, '0')}</b></div>
+              </div>
+            </>
+          ) : (
+            <div className="spot-empty">
+              <div className="lot-name vacant">
+                {st.status === 'COMPLETED' ? 'The sale has closed.' : 'Next lot coming up…'}
+              </div>
+              <p className="small muted" style={{ margin: '8px 0 0' }}>
+                {st.status === 'COMPLETED' ? 'Every result is in Sold and Unsold.' : 'The auctioneer opens the next lot from the catalogue.'}
+              </p>
+            </div>
+          )}
         </div>
 
-        {st.bidHistory.length ? (
-          <div className="ladder">
-            <div className="eyebrow">How the bidding climbed</div>
-            <div className="ladder-rail">
-              {st.bidHistory.map((b, i) => (
-                <div className="rung" key={i} title={clockTime(b.ts)}>
-                  <span className="amt money">{cr(b.amount)}</span>
-                  <span className="who">{b.teamName}</span>
-                </div>
-              ))}
-            </div>
+        {/* ---------------- the money ---------------- */}
+        <div className="spot-money">
+          <div className="bid-now">
+            <span className="k">Current bid</span>
+            {st.currentBid === null ? (
+              <span className="v quiet">{p ? `opens at ${cr(p.basePrice)}` : '—'}</span>
+            ) : (
+              <span className="v money">{cr(st.currentBid)}</span>
+            )}
+            {leader ? (
+              <span className="holder">
+                <TeamCrest name={leader.name} color={leader.color} size={22} />
+                {leader.name}
+              </span>
+            ) : (
+              <span className="holder quiet">no bids yet</span>
+            )}
+            {bidding && st.nextBid !== null ? (
+              <span className="next small muted">next valid bid <b className="money">{cr(st.nextBid)}</b></span>
+            ) : null}
           </div>
-        ) : null}
+
+          <div className="bid-feed">
+            <div className="k"><IconClock /> Bid history{p ? ` — ${p.name.split(' ')[0]}` : ''}</div>
+            {feed.length ? feed.map((b, i) => {
+              const team = snapshot.teams.find((t) => t.id === b.teamId);
+              return (
+                <div className={`feed-row ${i === 0 ? 'lead' : ''}`} key={`${b.ts}-${i}`}>
+                  <TeamCrest name={b.teamName} color={team ? team.color : '#5468FF'} size={26} />
+                  <div className="feed-main">
+                    <span className="who">{b.teamName} — raised to <b className="money">{cr(b.amount)}</b></span>
+                    <span className="when">{timeAgo(b.ts, now)}</span>
+                  </div>
+                </div>
+              );
+            }) : <div className="feed-quiet">Bids land here the moment a paddle goes up.</div>}
+          </div>
+        </div>
       </div>
+
+      {peek && p ? <PlayerPeek player={p} onClose={() => setPeek(false)} /> : null}
     </section>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuction, cr } from '../lib/auction.jsx';
+import { Jersey, TeamCrest, IconClock, timeAgo } from './graphics.jsx';
 
 export function Cat({ value }) {
   if (!value) return null;
@@ -130,6 +131,67 @@ export function TeamPeek({ team, onClose }) {
       <div className="row" style={{ marginTop: 16 }}>
         <a className="btn sm ghost" href={`/teams/${team.id}`}>Open full team page</a>
       </div>
+    </Modal>
+  );
+}
+
+
+/** The player profile — jersey, banner, tiles, and their own bid history. */
+export function PlayerPeek({ player, onClose }) {
+  const { snapshot } = useAuction();
+  if (!player) return null;
+  const team = player.teamId ? snapshot.teams.find((t) => t.id === player.teamId) : null;
+  const bids = snapshot.history
+    .filter((h) => h.action === 'BID_PLACED' && h.playerId === player.id)
+    .slice(0, 6);
+
+  return (
+    <Modal title="Player profile" onClose={onClose}>
+      <div className="profile-head">
+        <Jersey name={player.name} color={team ? team.color : 'var(--blue-raw)'} size={92} />
+        <div style={{ minWidth: 0 }}>
+          <div className="name-banner static">{player.name}</div>
+          <div className="row tight" style={{ marginTop: 9, flexWrap: 'wrap' }}>
+            <Cat value={player.primaryCategory} />
+            <span className="tag">{player.role}</span>
+            <span className="lot-no">Lot {String(player.sequence).padStart(2, '0')}</span>
+          </div>
+        </div>
+      </div>
+
+      {player.status === 'SOLD' && team ? (
+        <div className="sold-ribbon">
+          <TeamCrest name={team.name} color={team.color} size={26} />
+          SOLD to {team.name} for <b className="money">{cr(player.soldPrice)}</b>
+        </div>
+      ) : null}
+
+      <div className="spot-tiles" style={{ marginTop: 14 }}>
+        <div className="tile"><span className="k">Base price</span><b className="money">{cr(player.basePrice)}</b></div>
+        <div className="tile"><span className="k">Tier</span><b>{player.primaryCategory}</b></div>
+        <div className="tile"><span className="k">Status</span><b>{player.status === 'SOLD' ? 'Sold' : player.status === 'UNSOLD' ? 'Unsold' : player.status === 'IN_AUCTION' ? 'On the block' : player.status === 'REMOVED' ? 'Withdrawn' : 'In catalogue'}</b></div>
+        <div className="tile"><span className="k">Times offered</span><b>{player.timesAuctioned}</b></div>
+      </div>
+
+      {player.notes ? <p className="small muted" style={{ margin: '12px 0 0' }}>{player.notes}</p> : null}
+
+      {bids.length ? (
+        <div className="bid-feed" style={{ marginTop: 14 }}>
+          <div className="k"><IconClock /> Bid history for {player.name}</div>
+          {bids.map((h) => {
+            const t = snapshot.teams.find((x) => x.id === h.teamId);
+            return (
+              <div className="feed-row" key={h.id}>
+                <TeamCrest name={t ? t.name : '?'} color={t ? t.color : '#5468FF'} size={24} />
+                <div className="feed-main">
+                  <span className="who">{t ? t.name : h.teamId} — raised to <b className="money">{cr(h.value)}</b></span>
+                  <span className="when">{timeAgo(h.ts)}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
     </Modal>
   );
 }
