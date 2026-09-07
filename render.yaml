@@ -10,6 +10,11 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20.11.0
+      # Pin the passwords so a redeploy never rotates them. Set the value in
+      # the Render dashboard (sync: false means Render asks you for it):
+      #   admin=admin-854,warriors=warriors19,titans=titans22,superkings=superkings66,royals=royals25,challengers=challengers27,capitals=capitals14
+      - key: AUCTION_PASSWORDS
+        sync: false
     # Free instances have an EPHEMERAL disk: every deploy/restart wipes
     # data/auction.json AND regenerates data/auth.json (new passwords - read
     # them from the startup log). Fine for trying it out; for a real event

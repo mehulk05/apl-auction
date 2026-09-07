@@ -17,6 +17,24 @@ const crypto = require('crypto');
 const slug = (name) => String(name).toLowerCase().replace(/[^a-z0-9]+/g, '');
 const digits = (n) => String(crypto.randomInt(0, 10 ** n)).padStart(n, '0');
 
+/**
+ * Fixed passwords via the environment, for hosts with an ephemeral disk
+ * (Render free wipes auth.json on every deploy). Format:
+ *   AUCTION_PASSWORDS="admin=hammer-1,warriors=warriors19,titans=titans22"
+ * Keys are `admin`, a team id (T001) or a team-name slug (superkings).
+ * AUCTION_ADMIN_PASSWORD alone also works.
+ */
+function envOverrides() {
+  const out = {};
+  const raw = process.env.AUCTION_PASSWORDS || '';
+  for (const pair of raw.split(',')) {
+    const i = pair.indexOf('=');
+    if (i > 0) out[pair.slice(0, i).trim().toLowerCase()] = pair.slice(i + 1).trim();
+  }
+  if (process.env.AUCTION_ADMIN_PASSWORD) out.admin = process.env.AUCTION_ADMIN_PASSWORD;
+  return out;
+}
+
 function loadOrCreateAuth(dataDir, teams) {
   const file = path.join(dataDir, 'auth.json');
 
@@ -36,6 +54,15 @@ function loadOrCreateAuth(dataDir, teams) {
       changed = true;
     }
   }
+
+  // Environment-pinned passwords always win, so a redeploy never rotates them.
+  const over = envOverrides();
+  if (over.admin && cfg.admin !== over.admin) { cfg.admin = over.admin; changed = true; }
+  for (const t of teams) {
+    const want = over[t.id.toLowerCase()] || over[slug(t.name)];
+    if (want && cfg.teams[t.id] !== want) { cfg.teams[t.id] = want; changed = true; }
+  }
+
   if (changed) {
     fs.mkdirSync(dataDir, { recursive: true });
     fs.writeFileSync(file, JSON.stringify(cfg, null, 2), 'utf8');
