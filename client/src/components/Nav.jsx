@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuction } from '../lib/auction.jsx';
 
 const LINKS = [
@@ -16,6 +16,11 @@ const LINKS = [
 
 export default function Nav() {
   const { connected, role, setRole, snapshot, authKey, logout, myTeam } = useAuction();
+  const [open, setOpen] = useState(false);
+  const loc = useLocation();
+
+  // The burger menu folds away whenever the route changes.
+  useEffect(() => { setOpen(false); }, [loc.pathname]);
 
   // Identity comes from the password now — no switchers, just a badge.
   const links = LINKS.filter(([, , flag]) => !(flag === 'adminOnly' && role !== 'admin'));
@@ -30,9 +35,15 @@ export default function Nav() {
         <span className="sub">{snapshot ? snapshot.settings.auctionName : 'Player auction'}</span>
       </div>
 
-      <nav className="nav">
+      <button className="btn ghost burger" onClick={() => setOpen((o) => !o)}
+        aria-label="Menu" aria-expanded={open}>
+        {open ? '✕' : '☰'}
+      </button>
+
+      <nav className={`nav ${open ? 'open' : ''}`}>
         {links.map(([to, label]) => (
-          <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => (isActive ? 'active' : '')}>
+          <NavLink key={to} to={to} end={to === '/'} onClick={() => setOpen(false)}
+            className={({ isActive }) => (isActive ? 'active' : '')}>
             {label}
           </NavLink>
         ))}

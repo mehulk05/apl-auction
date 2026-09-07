@@ -1,18 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuction, cr } from '../lib/auction.jsx';
 import { DataTable, Card, PageHead } from '../components/ui.jsx';
 import { TeamCard } from '../components/TeamStrip.jsx';
+import { TeamEditor } from '../components/editors.jsx';
 
 export default function Teams() {
-  const { snapshot } = useAuction();
+  const { snapshot, isAdmin, action } = useAuction();
+  const [editor, setEditor] = useState(undefined); // undefined closed, null = add, object = edit
 
   return (
     <div className="stack">
       <PageHead
         title="Teams"
         sub={`The ${snapshot.teams.length} franchises — purses, squads and how high each may still bid. Click a card for details.`}
-        aside={<a className="btn sm ghost" href="/api/export/teams" download>teams.csv</a>}
+        aside={
+          <span className="row tight">
+            {isAdmin ? <button className="btn sm primary" onClick={() => setEditor(null)}>Add team</button> : null}
+            <a className="btn sm ghost" href="/api/export/teams" download>teams.csv</a>
+          </span>
+        }
       />
       <Card title="At a glance">
         <div className="teams-grid">
@@ -45,10 +52,26 @@ export default function Teams() {
               { key: 'needForMin', label: 'Short of min', num: true, render: (t) => (t.needForMin ? t.needForMin : '—') },
               { key: 'maxAllowedBid', label: 'Max bid', num: true, render: (t) => <span className="money">{cr(t.maxAllowedBid)}</span> },
               { key: 'captainName', label: 'Captain', render: (t) => t.captainName || '—' },
+              ...(isAdmin ? [{
+                key: 'act',
+                label: '',
+                sortable: false,
+                render: (t) => (
+                  <div className="row tight">
+                    <button className="btn sm" onClick={() => setEditor(t)}>Edit</button>
+                    <button className="btn sm ghost" onClick={() => {
+                      const v = prompt(`Set ${t.name}'s remaining purse (Cr). Currently ${t.purse}.`, t.purse);
+                      if (v !== null) action('ADJUST_PURSE', { teamId: t.id, purse: Number(v) });
+                    }}>Purse</button>
+                  </div>
+                ),
+              }] : []),
             ]}
           />
         </div>
       </section>
+
+      {editor !== undefined ? <TeamEditor team={editor} onClose={() => setEditor(undefined)} /> : null}
     </div>
   );
 }

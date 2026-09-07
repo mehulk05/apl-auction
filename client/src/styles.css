@@ -135,6 +135,7 @@ a:hover { color: var(--brass); }
 }
 
 .nav { display: flex; gap: 2px; flex: 1; flex-wrap: wrap; }
+.burger { display: none; }
 .nav a {
   position: relative;
   padding: 8px 11px;
@@ -800,13 +801,23 @@ table.data td.id { font: 400 11.5px/1 var(--mono); color: var(--ink-3); letter-s
   .brand .sub { display: none; }
   .topbar > .row { order: 2; flex-basis: 100%; justify-content: flex-start; }
   .topbar > .row select { flex: 1 1 auto; min-width: 116px; max-width: 200px; }
-  .nav {
-    order: 3; flex-basis: 100%; flex-wrap: nowrap;
-    overflow-x: auto; scrollbar-width: none;
-    margin: 0 -16px; padding: 2px 16px 6px;
+  /* the menu folds behind a burger — no sideways scrolling */
+  .burger {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 38px; padding: 0; font-size: 19px; line-height: 1;
   }
-  .nav::-webkit-scrollbar { display: none; }
-  .nav a::after { bottom: 1px; }
+  .nav { display: none; }
+  .nav.open {
+    display: flex; flex-direction: column; gap: 2px;
+    position: absolute; top: 100%; left: 0; right: 0;
+    background: #16150e;
+    border-bottom: 1px solid var(--rule);
+    padding: 10px 14px 14px;
+    box-shadow: var(--shadow-lift);
+    z-index: 80;
+  }
+  .nav.open a { padding: 12px 12px; font-size: 15px; }
+  .nav.open a::after { display: none; }
   /* on a phone the owner's paddle is the point — put it above the lot plate */
   .split > .col-side { order: -1; }
 }

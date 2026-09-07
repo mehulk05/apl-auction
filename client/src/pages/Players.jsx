@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuction, cr } from '../lib/auction.jsx';
 import { Cat, StatusTag, DataTable, Card, PageHead } from '../components/ui.jsx';
+import { PlayerEditor } from '../components/editors.jsx';
 
 const STATUSES = [
   ['AVAILABLE', 'In catalogue'],
@@ -12,7 +13,8 @@ const STATUSES = [
 ];
 
 export default function Players() {
-  const { snapshot } = useAuction();
+  const { snapshot, isAdmin } = useAuction();
+  const [editor, setEditor] = useState(undefined); // undefined closed, null = add, object = edit
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
   const [cat, setCat] = useState('');
@@ -45,7 +47,12 @@ export default function Players() {
       <PageHead
         title="Players"
         sub={`All ${snapshot.players.length} lots in this sale — search, or filter by status, category, role and team.`}
-        aside={<a className="btn sm ghost" href="/api/export/players" download>players.csv</a>}
+        aside={
+          <span className="row tight">
+            {isAdmin ? <button className="btn sm primary" onClick={() => setEditor(null)}>Add player</button> : null}
+            <a className="btn sm ghost" href="/api/export/players" download>players.csv</a>
+          </span>
+        }
       />
       <Card title="Find a player">
         <div className="row">
@@ -94,10 +101,18 @@ export default function Players() {
               { key: 'teamName', label: 'Team', render: (p) => (p.teamId ? <Link to={`/teams/${p.teamId}`}>{p.teamName}</Link> : '—') },
               { key: 'soldPrice', label: 'Sold for', num: true, render: (p) => (p.soldPrice === null ? '—' : <b className="money">{cr(p.soldPrice)}</b>) },
               { key: 'timesAuctioned', label: 'Offered', num: true },
+              ...(isAdmin ? [{
+                key: 'act',
+                label: '',
+                sortable: false,
+                render: (p) => <button className="btn sm" onClick={() => setEditor(p)}>Edit</button>,
+              }] : []),
             ]}
           />
         </div>
       </section>
+
+      {editor !== undefined ? <PlayerEditor player={editor} onClose={() => setEditor(undefined)} /> : null}
     </div>
   );
 }

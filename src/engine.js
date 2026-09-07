@@ -779,6 +779,24 @@ const HANDLERS = {
     };
   },
 
+  DELETE_PLAYER({ playerId }) {
+    const p = this.requirePlayer(playerId);
+    if (p.status === 'SOLD') {
+      throw new AuctionError(`${p.name} is sold - release them from the team first`, 'ALREADY_SOLD');
+    }
+    if (this.state.currentPlayerId === p.id) {
+      throw new AuctionError('Cannot delete the player currently on the block', 'PLAYER_IN_AUCTION');
+    }
+    this._pushUndo(`Deleted ${p.name} from the catalogue`);
+    this.data.players = this.data.players.filter((x) => x.id !== p.id);
+    this._log('PLAYER_DELETED', `${p.name} deleted from the catalogue`, { playerId: p.id });
+    return {
+      message: `${p.name} deleted`,
+      backup: `delete-${p.id}`,
+      events: [{ type: 'PLAYER_CHANGED', playerId: p.id }],
+    };
+  },
+
   ASSIGN_CAPTAIN({ teamId, playerId }) {
     const team = this.requireTeam(teamId);
     if (!playerId) {

@@ -515,6 +515,21 @@ async function stockTeam(e, teamId, count) {
       assert.ok(e2.data.history.some((h) => h.action === 'PURSE_UPDATED' && /75 Cr -> 40 Cr/.test(h.message)));
       await refuses(e2.dispatch('ADJUST_PURSE', { teamId: 'T003', purse: -5 }), 'BAD_AMOUNT');
     });
+    await t('a player can be deleted outright, and undo restores them', async () => {
+      const e2 = await freshEngine();
+      const before = e2.data.players.length;
+      await e2.dispatch('DELETE_PLAYER', { playerId: 'P002' });
+      assert.strictEqual(e2.data.players.length, before - 1);
+      assert.strictEqual(e2.player('P002'), null);
+      await e2.dispatch('UNDO');
+      assert.strictEqual(e2.data.players.length, before);
+      assert.strictEqual(e2.player('P002').name, 'Arjun Mehta');
+    });
+    await t('a sold player cannot be deleted', async () => {
+      const e2 = await freshEngine();
+      await sellAt(e2, 'P001', 'T001', 5);
+      await refuses(e2.dispatch('DELETE_PLAYER', { playerId: 'P001' }), 'ALREADY_SOLD');
+    });
   }
 
   // ============================================================ undo

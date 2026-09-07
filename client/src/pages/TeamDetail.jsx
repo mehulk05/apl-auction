@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuction, cr } from '../lib/auction.jsx';
 import { Cat, DataTable, Fig, Card } from '../components/ui.jsx';
+import { TeamEditor } from '../components/editors.jsx';
 
 export default function TeamDetail() {
   const { teamId } = useParams();
   const { snapshot, isAdmin, action } = useAuction();
+  const [editing, setEditing] = useState(false);
   const team = snapshot.teams.find((t) => t.id === teamId);
 
   if (!team) {
@@ -28,9 +30,20 @@ export default function TeamDetail() {
               </div>
               <div className="team-owner" style={{ marginTop: 8 }}>{team.owner || 'no owner'} · {team.id} · {team.status.toLowerCase()}</div>
             </div>
-            {team.captainName
-              ? <span className="tag warn">Captain · {team.captainName}</span>
-              : <span className="tag">No captain named</span>}
+            <div className="row tight">
+              {team.captainName
+                ? <span className="tag warn">Captain · {team.captainName}</span>
+                : <span className="tag">No captain named</span>}
+              {isAdmin ? (
+                <>
+                  <button className="btn sm" onClick={() => setEditing(true)}>Edit team</button>
+                  <button className="btn sm ghost" onClick={() => {
+                    const v = prompt(`Set ${team.name}'s remaining purse (Cr). Currently ${team.purse}.`, team.purse);
+                    if (v !== null) action('ADJUST_PURSE', { teamId: team.id, purse: Number(v) });
+                  }}>Adjust purse</button>
+                </>
+              ) : null}
+            </div>
           </div>
 
           <div className="figs" style={{ marginTop: 20 }}>
@@ -80,6 +93,8 @@ export default function TeamDetail() {
           ]}
         />
       </Card>
+
+      {editing ? <TeamEditor team={team} onClose={() => setEditing(false)} /> : null}
 
       {isAdmin && team.captainId ? (
         <div className="row">
