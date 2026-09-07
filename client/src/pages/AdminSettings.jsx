@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuction, cr } from '../lib/auction.jsx';
+
 import { DataTable, Modal, PlayerPicker, Card, PageHead } from '../components/ui.jsx';
 
 /* ------------------------------------------------------------ corrections */
@@ -295,7 +296,7 @@ function PlayersAdmin() {
   const { snapshot, action } = useAuction();
   const [edit, setEdit] = useState(null);
   const [adding, setAdding] = useState(false);
-  const [np, setNp] = useState({ name: '', primaryCategory: 'B', secondaryCategory: '', role: 'Batsman', basePrice: '' });
+  const [np, setNp] = useState({ name: '', primaryCategory: 'A', secondaryCategory: '', role: 'Batsman', basePrice: '' });
   const [picking, setPicking] = useState(false);
   const ROLES = ['Batsman', 'Bowler', 'All-Rounder', 'Wicket-Keeper'];
 
@@ -325,8 +326,15 @@ function PlayersAdmin() {
           <div className="form-grid">
             <label className="field">Name<input value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /></label>
             <label className="field">Category
-              <select value={edit.primaryCategory} onChange={(e) => setEdit({ ...edit, primaryCategory: e.target.value })}>
-                {snapshot.categories.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+              <select value={edit.primaryCategory} onChange={(e) => {
+                const cat = snapshot.categories.find((c) => c.name === e.target.value);
+                setEdit((prev) => ({
+                  ...prev,
+                  primaryCategory: e.target.value,
+                  basePrice: prev.status === 'SOLD' || !cat ? prev.basePrice : cat.basePrice,
+                }));
+              }}>
+                {snapshot.categories.map((c) => <option key={c.name} value={c.name}>{c.name} — {cr(c.basePrice)}</option>)}
               </select>
             </label>
             <label className="field">Second category
@@ -399,6 +407,67 @@ function PlayersAdmin() {
           </div>
         </Modal>
       ) : null}
+    </Card>
+  );
+}
+
+/* ------------------------------------------------------------ owner logins */
+
+function OwnerLogins() {
+  const { authKey, snapshot } = useAuction();
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState('');
+  const [open, setOpen] = useState(false);
+
+  const load = () => {
+    setErr('');
+    fetch('/api/passwords', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: authKey }),
+    }).then((r) => r.json())
+      .then((d) => (d.ok ? setData(d) : setErr(d.error || 'Could not load the passwords.')))
+      .catch((e) => setErr(e.message));
+  };
+  useEffect(() => { if (open) load(); }, [open, snapshot.teams.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <Card
+      title="Owner logins"
+      aside={<button className="btn sm" onClick={() => setOpen((o) => !o)}>{open ? 'Hide passwords' : 'Show passwords'}</button>}
+    >
+      {!open ? (
+        <p className="small muted" style={{ margin: 0 }}>
+          Every team's password, ready to hand out — a team added above gets its password here instantly.
+        </p>
+      ) : err ? (
+        <p className="small" style={{ margin: 0, color: 'var(--oxblood)', fontWeight: 600 }}>{err}</p>
+      ) : !data ? (
+        <p className="small muted" style={{ margin: 0 }}>Loading…</p>
+      ) : (
+        <>
+          <div style={{ border: '1px solid var(--rule)', borderRadius: 'var(--r-ctl)', overflow: 'hidden' }}>
+            <table className="data">
+              <tbody>
+                <tr>
+                  <td><b style={{ fontWeight: 600 }}>Auctioneer (you)</b></td>
+                  <td className="small muted">keep this one to yourself</td>
+                  <td className="num"><b className="money" style={{ fontFamily: 'var(--mono)' }}>{data.admin}</b></td>
+                </tr>
+                {data.teams.map((t) => (
+                  <tr key={t.id}>
+                    <td><b style={{ fontWeight: 600 }}>{t.name}</b></td>
+                    <td className="small muted">{t.owner || '—'}</td>
+                    <td className="num"><b style={{ fontFamily: 'var(--mono)' }}>{t.password || '(restart to generate)'}</b></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="small muted" style={{ margin: '12px 0 0' }}>
+            DM each owner their own line. Resetting the sale keeps these; deleting <span style={{ fontFamily: 'var(--mono)' }}>data/auth.json</span> and restarting regenerates them.
+          </p>
+        </>
+      )}
     </Card>
   );
 }
@@ -488,6 +557,7 @@ export default function AdminSettings() {
         <CategoriesForm />
       </div>
       <TeamsAdmin />
+      <OwnerLogins />
       <PlayersAdmin />
       <BackupsPanel />
     </div>

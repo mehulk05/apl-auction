@@ -298,8 +298,8 @@ function stopServer() {
     // Auction moves on while owner2 is dark.
     await act(admin, 'SELECT_PLAYER', { playerId: 'P009' });
     await act(admin, 'START_BIDDING');
-    await act(owner1, 'PLACE_BID', { teamId: 'T001', amount: 3 });
-    await settle([admin], (s) => s.state.currentPlayerId === 'P009' && s.state.currentBid === 3);
+    await act(owner1, 'PLACE_BID', { teamId: 'T001', amount: 2 });
+    await settle([admin], (s) => s.state.currentPlayerId === 'P009' && s.state.currentBid === 2);
 
     const staleCount = owner2.snapshotCount;
     owner2.socket.connect();
@@ -311,7 +311,7 @@ function stopServer() {
     }
     assert.strictEqual(owner2.socket.connected, true, 'client did not reconnect');
     assert.strictEqual(owner2.snapshot.state.currentPlayerId, 'P009');
-    assert.strictEqual(owner2.snapshot.state.currentBid, 3);
+    assert.strictEqual(owner2.snapshot.state.currentBid, 2);
     assert.strictEqual(owner2.snapshot.state.highestBidderName, 'Warriors');
     assert.strictEqual(owner2.snapshot.players.find((p) => p.id === 'P001').status, 'SOLD');
     assert.strictEqual(owner2.snapshot.stats.sold, 1);
@@ -321,7 +321,7 @@ function stopServer() {
       owner2.socket.emit('request:snapshot', null, (res) => resolve(res.snapshot));
     });
     assert.strictEqual(snap.state.currentPlayerId, 'P009');
-    assert.strictEqual(snap.state.currentBid, 3);
+    assert.strictEqual(snap.state.currentBid, 2);
   });
 
   // ------------------------------------------------------------------
@@ -329,11 +329,11 @@ function stopServer() {
   await t('POST /api/action works when a client has no socket', async () => {
     const r = await api('/api/action', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'PLACE_BID', payload: { teamId: 'T002', amount: 4 }, key: TEAMKEYS.T002 }),
+      body: JSON.stringify({ type: 'PLACE_BID', payload: { teamId: 'T002', amount: 3 }, key: TEAMKEYS.T002 }),
     });
     assert.strictEqual(r.status, 200);
     assert.strictEqual(r.json.ok, true);
-    await settle(all, (s) => s.state.currentBid === 4 && s.state.highestBidderName === 'Titans');
+    await settle(all, (s) => s.state.currentBid === 3 && s.state.highestBidderName === 'Titans');
   });
   await t('an invalid action over REST returns 409 with a reason', async () => {
     const r = await api('/api/action', {

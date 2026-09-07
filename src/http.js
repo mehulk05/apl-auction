@@ -4,7 +4,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const { AuctionError } = require('./engine');
-const { authorize, login } = require('./auth');
+const { authorize, login, syncTeams } = require('./auth');
 const { EXPORTS } = require('./csvExport');
 
 function createApp(engine, auth) {
@@ -20,6 +20,19 @@ function createApp(engine, auth) {
   // Full snapshot - also what a reconnecting client fetches (spec section 37).
   api.get('/state', (req, res) => res.json(engine.snapshot()));
 
+  /** The auctioneer can read every login from the Admin page. */
+  api.post('/passwords', (req, res) => {
+    const { key } = req.body || {};
+    if (!auth || key !== auth.admin) {
+      return res.status(401).json({ ok: false, error: 'Auctioneer password required', code: 'UNAUTHORIZED' });
+    }
+    res.json({
+      ok: true,
+      admin: auth.admin,
+      teams: engine.data.teams.map((t) => ({ id: t.id, name: t.name, owner: t.owner, password: auth.teams[t.id] || '' })),
+    });
+  });
+
   /** Password -> identity, for the login screen. */
   api.post('/login', (req, res) => {
     const result = login(auth, req.body || {});
@@ -34,6 +47,7 @@ function createApp(engine, auth) {
     if (!allowed.ok) return res.status(401).json(allowed);
     try {
       const result = await engine.dispatch(type, payload || {});
+      if (type === 'ADD_TEAM') syncTeams(auth, engine.dataDir, engine.data.teams);
       res.json({ ok: true, message: result.message, events: result.events, file: result.file });
     } catch (err) {
       if (err instanceof AuctionError) {

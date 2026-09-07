@@ -79,14 +79,15 @@ async function sellAt(e, playerId, teamId, price) {
   await e.dispatch('MARK_SOLD');
 }
 
-/** Give a team N cheap (base 1 Cr) players. */
+/** Give a team N cheapest-tier players at their base price. */
 async function stockTeam(e, teamId, count) {
-  const cheap = e.data.players.filter((p) => p.status === 'AVAILABLE' && p.basePrice === 1);
+  const price = e.minPlayerPrice();
+  const cheap = e.data.players.filter((p) => p.status === 'AVAILABLE' && p.basePrice === price);
   for (let i = 0; i < count; i++) {
     const p = cheap[i];
     await e.dispatch('SELECT_PLAYER', { playerId: p.id });
     await e.dispatch('START_BIDDING');
-    await e.dispatch('PLACE_BID', { teamId, amount: 1 });
+    await e.dispatch('PLACE_BID', { teamId, amount: price });
     await e.dispatch('MARK_SOLD');
   }
 }
@@ -110,13 +111,16 @@ async function stockTeam(e, teamId, count) {
         assert.strictEqual(tm.maxSquad, 14);
       }
     });
-    await t('base price is derived from the player category (A+=5, A=3, B+=2, B=1)', () => {
+    await t('two tiers only: A+ opens at 5 Cr, A at 2 Cr, every player priced by tier', () => {
       const price = (c) => e.data.categories.find((x) => x.name === c).basePrice;
       for (const p of e.data.players) {
         assert.strictEqual(p.basePrice, price(p.primaryCategory), `${p.name} (${p.primaryCategory})`);
       }
+      assert.strictEqual(e.data.categories.length, 2);
       assert.strictEqual(price('A+'), 5);
-      assert.strictEqual(price('B'), 1);
+      assert.strictEqual(price('A'), 2);
+      assert.strictEqual(e.data.players.filter((p) => p.primaryCategory === 'A+').length, 8);
+      assert.strictEqual(e.data.players.filter((p) => p.primaryCategory === 'A').length, 56);
     });
     await t('auction starts in WAITING with no current player', () => {
       assert.strictEqual(e.state.status, 'WAITING');
@@ -236,44 +240,44 @@ async function stockTeam(e, teamId, count) {
   group('4. Maximum allowed bid & minimum-squad protection');
   {
     const e = await freshEngine();
-    await t('an empty team can bid purse - (min-1) x cheapest = 75 - 10 = 65 Cr', () => {
-      assert.strictEqual(e.maxAllowedBid('T001'), 65);
+    await t('an empty team can bid purse - (min-1) x cheapest = 75 - 10x2 = 55 Cr', () => {
+      assert.strictEqual(e.maxAllowedBid('T001'), 55);
     });
 
     // Recreate the spec's own worked example: 28 Cr purse, 7 players, min 11.
     await stockTeam(e, 'T001', 7);
     await e.dispatch('ADJUST_PURSE', { teamId: 'T001', purse: 28 });
-    await t('spec example (28 Cr, 7 players) -> corrected formula gives 25 Cr', () => {
+    await t('28 Cr purse, 7 players -> corrected reserve (3 x 2 Cr) gives 22 Cr', () => {
       assert.strictEqual(e.squadSize('T001'), 7);
       assert.strictEqual(e.team('T001').purse, 28);
-      assert.strictEqual(e.maxAllowedBid('T001'), 25);
+      assert.strictEqual(e.maxAllowedBid('T001'), 22);
     });
     await e.dispatch('UPDATE_SETTINGS', { patch: { reserveMode: 'spec' } });
-    await t('spec example under the literal spec formula gives exactly 24 Cr', () => {
-      assert.strictEqual(e.maxAllowedBid('T001'), 24);
+    await t('the literal spec formula reserves one extra: 28 - 4x2 = 20 Cr', () => {
+      assert.strictEqual(e.maxAllowedBid('T001'), 20);
     });
     await e.dispatch('UPDATE_SETTINGS', { patch: { reserveMode: 'corrected' } });
 
     await t('a bid above the max allowed bid is rejected server-side', async () => {
       await e.dispatch('SELECT_PLAYER', { playerId: 'P001' });
       await e.dispatch('START_BIDDING');
-      // Walk T002 up to 26, T001's ceiling is 25.
+      // Walk rivals up to 22; T001's ceiling is 22, so 23 must be refused.
       let amt = e.nextBidAmount();
-      while (amt < 26) { await e.dispatch('PLACE_BID', { teamId: amt % 2 ? 'T002' : 'T003', amount: amt }); amt++; }
-      await refuses(e.dispatch('PLACE_BID', { teamId: 'T001', amount: 26 }), 'MIN_SQUAD_PROTECTION');
+      while (amt < 23) { await e.dispatch('PLACE_BID', { teamId: amt % 2 ? 'T002' : 'T003', amount: amt }); amt++; }
+      await refuses(e.dispatch('PLACE_BID', { teamId: 'T001', amount: 23 }), 'MIN_SQUAD_PROTECTION');
       await e.dispatch('MARK_UNSOLD');
     });
 
     // The endgame the literal spec formula breaks: 10 players, 1 Cr left.
     const e2 = await freshEngine();
     await stockTeam(e2, 'T001', 10);
-    await e2.dispatch('ADJUST_PURSE', { teamId: 'T001', purse: 1 });
-    await t('endgame: 10 players + 1 Cr left CAN still buy the 11th (corrected)', async () => {
-      assert.strictEqual(e2.maxAllowedBid('T001'), 1);
-      const cheap = e2.data.players.find((p) => p.status === 'AVAILABLE' && p.basePrice === 1);
+    await e2.dispatch('ADJUST_PURSE', { teamId: 'T001', purse: 2 });
+    await t('endgame: 10 players + exactly one cheapest lot of purse CAN buy the 11th (corrected)', async () => {
+      assert.strictEqual(e2.maxAllowedBid('T001'), 2);
+      const cheap = e2.data.players.find((p) => p.status === 'AVAILABLE' && p.basePrice === 2);
       await e2.dispatch('SELECT_PLAYER', { playerId: cheap.id });
       await e2.dispatch('START_BIDDING');
-      await e2.dispatch('PLACE_BID', { teamId: 'T001', amount: 1 });
+      await e2.dispatch('PLACE_BID', { teamId: 'T001', amount: 2 });
       await e2.dispatch('MARK_SOLD');
       assert.strictEqual(e2.squadSize('T001'), 11);
       assert.strictEqual(e2.team('T001').purse, 0);
@@ -281,17 +285,17 @@ async function stockTeam(e, teamId, count) {
     await t('the literal spec formula would have stranded that team at 0 Cr max bid', async () => {
       const e3 = await freshEngine({ reserveMode: 'spec' });
       await stockTeam(e3, 'T001', 10);
-      await e3.dispatch('ADJUST_PURSE', { teamId: 'T001', purse: 1 });
+      await e3.dispatch('ADJUST_PURSE', { teamId: 'T001', purse: 2 });
       assert.strictEqual(e3.maxAllowedBid('T001'), 0);
     });
 
     await t('a bid beyond the remaining purse is rejected', async () => {
       const e4 = await freshEngine();
-      await e4.dispatch('ADJUST_PURSE', { teamId: 'T001', purse: 3 });
-      await e4.dispatch('SELECT_PLAYER', { playerId: 'P009' }); // A, base 3
+      await e4.dispatch('ADJUST_PURSE', { teamId: 'T001', purse: 2 });
+      await e4.dispatch('SELECT_PLAYER', { playerId: 'P009' }); // A, base 2
       await e4.dispatch('START_BIDDING');
-      await e4.dispatch('PLACE_BID', { teamId: 'T002', amount: 3 });
-      await refuses(e4.dispatch('PLACE_BID', { teamId: 'T001', amount: 4 }), 'INSUFFICIENT_PURSE');
+      await e4.dispatch('PLACE_BID', { teamId: 'T002', amount: 2 });
+      await refuses(e4.dispatch('PLACE_BID', { teamId: 'T001', amount: 3 }), 'INSUFFICIENT_PURSE');
     });
   }
 
@@ -302,7 +306,7 @@ async function stockTeam(e, teamId, count) {
     await stockTeam(e, 'T001', 14);
     await t('a team can reach exactly 14 players', () => {
       assert.strictEqual(e.squadSize('T001'), 14);
-      assert.strictEqual(e.team('T001').purse, 75 - 14);
+      assert.strictEqual(e.team('T001').purse, 75 - 14 * 2);
     });
     await t('max allowed bid becomes 0 once the squad is full', () => {
       assert.strictEqual(e.maxAllowedBid('T001'), 0);
@@ -313,10 +317,10 @@ async function stockTeam(e, teamId, count) {
       assert.match(el.reason, /Squad full \(14\/14\)/);
     });
     await t('the server rejects a 15th purchase attempt', async () => {
-      const cheap = e.data.players.find((p) => p.status === 'AVAILABLE' && p.basePrice === 1);
+      const cheap = e.data.players.find((p) => p.status === 'AVAILABLE' && p.basePrice === 2);
       await e.dispatch('SELECT_PLAYER', { playerId: cheap.id });
       await e.dispatch('START_BIDDING');
-      await refuses(e.dispatch('PLACE_BID', { teamId: 'T001', amount: 1 }), 'SQUAD_FULL');
+      await refuses(e.dispatch('PLACE_BID', { teamId: 'T001', amount: 2 }), 'SQUAD_FULL');
       await e.dispatch('MARK_UNSOLD');
     });
   }
@@ -623,7 +627,7 @@ async function stockTeam(e, teamId, count) {
       records.forEach((r) => { kinds[r.record_type] = (kinds[r.record_type] || 0) + 1; });
       assert.strictEqual(kinds.PLAYER, 64);
       assert.strictEqual(kinds.TEAM, 6);
-      assert.strictEqual(kinds.CATEGORY, 4);
+      assert.strictEqual(kinds.CATEGORY, 2);
       assert.strictEqual(kinds.STATE, 1);
       assert.ok(kinds.TRANSACTION > 0);
       assert.ok(kinds.SETTING > 0);

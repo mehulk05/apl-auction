@@ -20,11 +20,10 @@ const DEFAULT_SETTINGS = {
   enableProjectorMode: true,
 };
 
+// Two tiers only: A+ opens at 5 Cr, A at 2 Cr.
 const DEFAULT_CATEGORIES = [
   { name: 'A+', basePrice: 5 },
-  { name: 'A', basePrice: 3 },
-  { name: 'B+', basePrice: 2 },
-  { name: 'B', basePrice: 1 },
+  { name: 'A', basePrice: 2 },
 ];
 
 const DEFAULT_TEAMS = [
@@ -114,14 +113,17 @@ function buildSeed() {
     const found = categories.find((c) => c.name === cat);
     return found ? found.basePrice : 1;
   };
-  const players = RAW_PLAYERS.map(([name, primary, role, secondary], idx) => ({
+  const players = RAW_PLAYERS.map(([name, primary, role], idx) => {
+    // the two-tier world: former A/B+/B lots all open as category A
+    const tier = primary === 'A+' ? 'A+' : 'A';
+    return {
     id: 'P' + String(idx + 1).padStart(3, '0'),
     name,
     photo: '',
-    primaryCategory: primary,
-    secondaryCategory: secondary || '',
+    primaryCategory: tier,
+    secondaryCategory: '',
     role,
-    basePrice: priceOf(primary),
+    basePrice: priceOf(tier),
     status: 'AVAILABLE',
     soldPrice: null,
     teamId: '',
@@ -129,7 +131,8 @@ function buildSeed() {
     sequence: idx + 1,
     notes: '',
     timesAuctioned: 0,
-  }));
+    };
+  });
   const teams = DEFAULT_TEAMS.map((t) => ({
     id: t.id,
     name: t.name,

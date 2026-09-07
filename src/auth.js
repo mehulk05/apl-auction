@@ -84,4 +84,20 @@ function login(cfg, { password, role, teamId }) {
   return { ok: false, error: 'Wrong password.' };
 }
 
-module.exports = { loadOrCreateAuth, authorize, login };
+/** A team added mid-sale gets its password immediately, not on restart. */
+function syncTeams(cfg, dataDir, teams) {
+  if (!cfg) return cfg;
+  let changed = false;
+  for (const t of teams) {
+    if (!cfg.teams[t.id]) {
+      cfg.teams[t.id] = slug(t.name) + digits(2);
+      changed = true;
+    }
+  }
+  if (changed) {
+    fs.writeFileSync(path.join(dataDir, 'auth.json'), JSON.stringify(cfg, null, 2), 'utf8');
+  }
+  return cfg;
+}
+
+module.exports = { loadOrCreateAuth, authorize, login, syncTeams };

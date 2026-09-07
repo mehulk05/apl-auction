@@ -2,7 +2,7 @@
 
 const { Server } = require('socket.io');
 const { AuctionError } = require('./engine');
-const { authorize } = require('./auth');
+const { authorize, syncTeams } = require('./auth');
 
 /**
  * Socket.IO layer. Clients only ever send action requests; the server answers
@@ -50,6 +50,7 @@ function attachRealtime(httpServer, engine, auth) {
       }
       try {
         const result = await engine.dispatch(type, payload);
+        if (type === 'ADD_TEAM') syncTeams(auth, engine.dataDir, engine.data.teams);
         if (typeof ack === 'function') ack({ ok: true, message: result.message, events: result.events, file: result.file });
       } catch (err) {
         const isAuction = err instanceof AuctionError;
