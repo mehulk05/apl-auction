@@ -198,8 +198,11 @@ auctioneer. They survive `RESET_AUCTION` (delete the file and restart to regener
 - Checks are server-side on both the socket and REST paths; the login screen
   (`POST /api/login`) verifies a password and keeps it per browser tab.
 - `?key=<password>` in any URL logs that tab in without typing.
-- **Pin the passwords** with `AUCTION_PASSWORDS` so a redeploy never rotates them
-  (essential on ephemeral disks like Render free):
-  `AUCTION_PASSWORDS=admin=admin-854,warriors=warriors19,titans=titans22,...`
-  — keys are `admin`, a team id (`T001`) or a team-name slug (`superkings`).
-  Keep every password distinct (login recognises the team from the password).
+- **Pin one variable and everything is stable**: set `AUCTION_ADMIN_PASSWORD`.
+  Team passwords are *derived* in code from the team name + the admin password,
+  so every team — including one added from the Admin page tomorrow — gets the
+  same password on every boot and redeploy. Read them in Admin -> Owner logins.
+- Want to hand-pick specific passwords instead? `AUCTION_PASSWORDS` overrides
+  the derivation per key: `admin=...,warriors=...,T007=...` (team id or
+  name slug). Keep every password distinct — login recognises the team from
+  the password alone.

@@ -35,6 +35,33 @@ function envOverrides() {
   return out;
 }
 
+/**
+ * A team's password is DERIVED, not stored in a list: slug of the name plus
+ * two digits hashed from the admin password. So any team — including one the
+ * auctioneer adds tomorrow — gets the same password on every boot and every
+ * redeploy, as long as the admin password itself is pinned. The formula lives
+ * in code; the secret lives in the environment.
+ */
+function derivedPassword(name, adminPw) {
+  const s = slug(name);
+  const h = crypto.createHash('sha256').update(`${adminPw}|${s}`).digest('hex');
+  return s + String(parseInt(h.slice(0, 8), 16) % 100).padStart(2, '0');
+}
+
+/** env override > password already on disk > derived from the admin password. */
+function fillTeams(cfg, teams) {
+  const over = envOverrides();
+  let changed = false;
+  for (const t of teams) {
+    const want = over[t.id.toLowerCase()] || over[slug(t.name)] || cfg.teams[t.id] || derivedPassword(t.name, cfg.admin);
+    if (cfg.teams[t.id] !== want) {
+      cfg.teams[t.id] = want;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 function loadOrCreateAuth(dataDir, teams) {
   const file = path.join(dataDir, 'auth.json');
 
@@ -42,26 +69,17 @@ function loadOrCreateAuth(dataDir, teams) {
   if (fs.existsSync(file)) {
     try { cfg = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (_) { cfg = null; }
   }
-  if (!cfg || !cfg.admin || typeof cfg.teams !== 'object') {
-    cfg = { admin: 'admin-' + digits(3), teams: {} };
+  if (!cfg || typeof cfg.teams !== 'object') {
+    cfg = { admin: '', teams: {} };
   }
 
-  // Every current team gets a password; teams added later get one on restart.
-  let changed = !fs.existsSync(file);
-  for (const t of teams) {
-    if (!cfg.teams[t.id]) {
-      cfg.teams[t.id] = slug(t.name) + digits(2);
-      changed = true;
-    }
-  }
-
-  // Environment-pinned passwords always win, so a redeploy never rotates them.
+  // Admin first - everything else derives from it.
   const over = envOverrides();
-  if (over.admin && cfg.admin !== over.admin) { cfg.admin = over.admin; changed = true; }
-  for (const t of teams) {
-    const want = over[t.id.toLowerCase()] || over[slug(t.name)];
-    if (want && cfg.teams[t.id] !== want) { cfg.teams[t.id] = want; changed = true; }
-  }
+  const admin = over.admin || cfg.admin || 'admin-' + digits(3);
+  let changed = !fs.existsSync(file) || cfg.admin !== admin;
+  cfg.admin = admin;
+
+  changed = fillTeams(cfg, teams) || changed;
 
   if (changed) {
     fs.mkdirSync(dataDir, { recursive: true });
@@ -111,17 +129,10 @@ function login(cfg, { password, role, teamId }) {
   return { ok: false, error: 'Wrong password.' };
 }
 
-/** A team added mid-sale gets its password immediately, not on restart. */
+/** A team added mid-sale gets its (derived) password immediately, not on restart. */
 function syncTeams(cfg, dataDir, teams) {
   if (!cfg) return cfg;
-  let changed = false;
-  for (const t of teams) {
-    if (!cfg.teams[t.id]) {
-      cfg.teams[t.id] = slug(t.name) + digits(2);
-      changed = true;
-    }
-  }
-  if (changed) {
+  if (fillTeams(cfg, teams)) {
     fs.writeFileSync(path.join(dataDir, 'auth.json'), JSON.stringify(cfg, null, 2), 'utf8');
   }
   return cfg;
