@@ -153,7 +153,15 @@ export function AuctionProvider({ children }) {
       if (res && res.ok) {
         if (!opts.quiet && res.message) pushToast(res.message, 'ok');
       } else if (res) {
-        pushToast(res.error || 'Action failed', 'err');
+        if (res.code === 'UNAUTHORIZED' && authKeyRef.current) {
+          // The password changed on the server (e.g. after a redeploy) - drop
+          // the stale one so the sign-in screen comes back instead of every
+          // button failing with "wrong password".
+          setAuthKey('');
+          pushToast('Your password is no longer valid here - sign in again.', 'err', 'Signed out');
+        } else {
+          pushToast(res.error || 'Action failed', 'err');
+        }
       }
       resolve(res || { ok: false, error: 'No response' });
     };
@@ -171,7 +179,7 @@ export function AuctionProvider({ children }) {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type, payload, key }),
     }).then((r) => r.json()).then(done).catch((e) => done({ ok: false, error: e.message }));
-  }), [pushToast]);
+  }), [pushToast, setAuthKey]);
 
   const login = useCallback(async (password, constraint) => {
     try {
