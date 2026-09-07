@@ -66,7 +66,7 @@ export default function History() {
             initialSort={{ key: 'ts', dir: 'desc' }}
             empty="Nothing recorded yet."
             columns={[
-              { key: 'id', label: 'Entry', mono: true },
+              { key: 'id', label: 'Entry', mono: true, hide: 'md' },
               { key: 'ts', label: 'Time', mono: true, render: (h) => new Date(h.ts).toLocaleTimeString([], { hour12: false }) },
               { key: 'action', label: 'Kind', render: (h) => <span className={`tag ${TONE[h.action] || ''}`}>{READABLE(h.action)}</span> },
               { key: 'message', label: 'What happened' },

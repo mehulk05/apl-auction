@@ -33,7 +33,7 @@ export default function Teams() {
             rows={snapshot.teams}
             initialSort={{ key: 'spent', dir: 'desc' }}
             columns={[
-              { key: 'id', label: 'ID', mono: true },
+              { key: 'id', label: 'ID', mono: true, hide: 'md' },
               {
                 key: 'name',
                 label: 'Team',
@@ -44,14 +44,14 @@ export default function Teams() {
                   </span>
                 ),
               },
-              { key: 'owner', label: 'Owner' },
-              { key: 'startingPurse', label: 'Opening purse', num: true, render: (t) => <span className="money">{cr(t.startingPurse)}</span> },
-              { key: 'spent', label: 'Spent', num: true, render: (t) => <span className="money">{cr(t.spent)}</span> },
+              { key: 'owner', label: 'Owner', hide: 'sm' },
+              { key: 'startingPurse', label: 'Opening purse', num: true, hide: 'sm', render: (t) => <span className="money">{cr(t.startingPurse)}</span> },
+              { key: 'spent', label: 'Spent', num: true, hide: 'sm', render: (t) => <span className="money">{cr(t.spent)}</span> },
               { key: 'purse', label: 'Left', num: true, render: (t) => <b className="money">{cr(t.purse)}</b> },
               { key: 'squadSize', label: 'Squad', num: true, render: (t) => `${t.squadSize} / ${t.maxSquad}` },
-              { key: 'needForMin', label: 'Short of min', num: true, render: (t) => (t.needForMin ? t.needForMin : '—') },
-              { key: 'maxAllowedBid', label: 'Max bid', num: true, render: (t) => <span className="money">{cr(t.maxAllowedBid)}</span> },
-              { key: 'captainName', label: 'Captain', render: (t) => t.captainName || '—' },
+              { key: 'needForMin', label: 'Short of min', num: true, hide: 'md', render: (t) => (t.needForMin ? t.needForMin : '—') },
+              { key: 'maxAllowedBid', label: 'Max bid', num: true, hide: 'sm', render: (t) => <span className="money">{cr(t.maxAllowedBid)}</span> },
+              { key: 'captainName', label: 'Captain', hide: 'sm', render: (t) => t.captainName || '—' },
               ...(isAdmin ? [{
                 key: 'act',
                 label: '',

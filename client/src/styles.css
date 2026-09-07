@@ -764,6 +764,26 @@ table.data td.id { font: 400 11.5px/1 var(--mono); color: var(--ink-3); letter-s
 .actionbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .actionbar .btn.hammer, .actionbar .btn.pass { padding: 12px 22px; font-size: 13.5px; }
 
+/* columns that leave the stage as the screen narrows - no sideways tables */
+@media (max-width: 1100px) { .hide-md { display: none; } }
+@media (max-width: 760px) {
+  .hide-sm, .hide-md { display: none; }
+
+  /* tighter table anatomy on a phone - the goal is zero sideways scroll */
+  table.data { font-size: 12.5px; }
+  table.data th { padding: 10px 5px; font-size: 9px; letter-spacing: .05em; }
+  table.data td { padding: 9px 5px; }
+  .tag { font-size: 10px; padding: 3px 6px; letter-spacing: .02em; }
+  table.data .btn.sm { padding: 5px 8px; font-size: 11px; }
+
+  /* the auctioneer's bench folds into a tidy grid instead of a ragged wrap */
+  .actionbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .actionbar .spacer { display: none; }
+  .actionbar .btn { width: 100%; padding: 13px 6px; }
+  .actionbar .btn.primary { grid-column: 1 / -1; }
+  .actionbar .btn.hammer, .actionbar .btn.pass { padding: 15px 6px; font-size: 14px; }
+}
+
 .ticker {
   display: flex; align-items: baseline; gap: 12px;
   padding: 9px 14px;

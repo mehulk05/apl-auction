@@ -72,8 +72,8 @@ export default function TeamDetail() {
           columns={[
             { key: 'name', label: 'Player', render: (p) => <span><b style={{ fontWeight: 600 }}>{p.name}</b>{p.isCaptain ? <span className="tag warn" style={{ marginLeft: 8 }}>Captain</span> : null}</span> },
             { key: 'primaryCategory', label: 'Category', render: (p) => <Cat value={p.primaryCategory} /> },
-            { key: 'role', label: 'Role' },
-            { key: 'basePrice', label: 'Base price', num: true, render: (p) => <span className="money">{cr(p.basePrice)}</span> },
+            { key: 'role', label: 'Role', hide: 'sm' },
+            { key: 'basePrice', label: 'Base price', num: true, hide: 'sm', render: (p) => <span className="money">{cr(p.basePrice)}</span> },
             { key: 'soldPrice', label: 'Paid', num: true, render: (p) => <b className="money">{cr(p.soldPrice)}</b> },
             ...(isAdmin ? [{
               key: 'act',

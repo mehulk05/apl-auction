@@ -37,12 +37,12 @@ export default function Unsold() {
             initialSort={{ key: 'basePrice', dir: 'desc' }}
             empty="Every lot found a buyer."
             columns={[
-              { key: 'sequence', label: 'Lot', num: true, mono: true },
+              { key: 'sequence', label: 'Lot', num: true, mono: true, hide: 'sm' },
               { key: 'name', label: 'Player', render: (p) => <b style={{ fontWeight: 600 }}>{p.name}</b> },
-              { key: 'primaryCategory', label: 'Category', render: (p) => <Cat value={p.primaryCategory} /> },
-              { key: 'role', label: 'Role' },
+              { key: 'primaryCategory', label: 'Category', hide: 'sm', render: (p) => <Cat value={p.primaryCategory} /> },
+              { key: 'role', label: 'Role', hide: 'sm' },
               { key: 'basePrice', label: 'Base price', num: true, render: (p) => <span className="money">{cr(p.basePrice)}</span> },
-              { key: 'timesAuctioned', label: 'Times offered', num: true },
+              { key: 'timesAuctioned', label: 'Times offered', num: true, hide: 'sm' },
               ...(isAdmin ? [{
                 key: 'act',
                 label: '',
@@ -71,9 +71,9 @@ export default function Unsold() {
             rows={removed}
             initialSort={{ key: 'name', dir: 'asc' }}
             columns={[
-              { key: 'sequence', label: 'Lot', num: true, mono: true },
+              { key: 'sequence', label: 'Lot', num: true, mono: true, hide: 'sm' },
               { key: 'name', label: 'Player' },
-              { key: 'primaryCategory', label: 'Category', render: (p) => <Cat value={p.primaryCategory} /> },
+              { key: 'primaryCategory', label: 'Category', hide: 'sm', render: (p) => <Cat value={p.primaryCategory} /> },
               { key: 'basePrice', label: 'Base price', num: true, render: (p) => <span className="money">{cr(p.basePrice)}</span> },
               ...(isAdmin ? [{
                 key: 'act', label: '', sortable: false,

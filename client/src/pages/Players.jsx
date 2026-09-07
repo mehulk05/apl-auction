@@ -90,17 +90,17 @@ export default function Players() {
             initialSort={{ key: 'sequence', dir: 'asc' }}
             empty="No lots match those filters."
             columns={[
-              { key: 'sequence', label: 'Lot', num: true, mono: true },
-              { key: 'id', label: 'ID', mono: true },
+              { key: 'sequence', label: 'Lot', num: true, mono: true, hide: 'sm' },
+              { key: 'id', label: 'ID', mono: true, hide: 'md' },
               { key: 'name', label: 'Player', render: (p) => <b style={{ fontWeight: 600 }}>{p.name}</b> },
               { key: 'primaryCategory', label: 'Category', render: (p) => <Cat value={p.primaryCategory} /> },
-              { key: 'secondaryCategory', label: 'Second', render: (p) => (p.secondaryCategory ? <Cat value={p.secondaryCategory} /> : '—') },
-              { key: 'role', label: 'Role' },
+              { key: 'secondaryCategory', label: 'Second', hide: 'md', render: (p) => (p.secondaryCategory ? <Cat value={p.secondaryCategory} /> : '—') },
+              { key: 'role', label: 'Role', hide: 'sm' },
               { key: 'basePrice', label: 'Base price', num: true, render: (p) => <span className="money">{cr(p.basePrice)}</span> },
               { key: 'status', label: 'Status', render: (p) => <StatusTag status={p.status} /> },
-              { key: 'teamName', label: 'Team', render: (p) => (p.teamId ? <Link to={`/teams/${p.teamId}`}>{p.teamName}</Link> : '—') },
-              { key: 'soldPrice', label: 'Sold for', num: true, render: (p) => (p.soldPrice === null ? '—' : <b className="money">{cr(p.soldPrice)}</b>) },
-              { key: 'timesAuctioned', label: 'Offered', num: true },
+              { key: 'teamName', label: 'Team', hide: 'sm', render: (p) => (p.teamId ? <Link to={`/teams/${p.teamId}`}>{p.teamName}</Link> : '—') },
+              { key: 'soldPrice', label: 'Sold for', num: true, hide: 'sm', render: (p) => (p.soldPrice === null ? '—' : <b className="money">{cr(p.soldPrice)}</b>) },
+              { key: 'timesAuctioned', label: 'Offered', num: true, hide: 'md' },
               ...(isAdmin ? [{
                 key: 'act',
                 label: '',

@@ -164,7 +164,7 @@ export function DataTable({ columns, rows, empty = 'Nothing here yet', initialSo
             {columns.map((c) => (
               <th
                 key={c.key}
-                className={`${c.num ? 'num' : ''} ${c.sortable === false ? 'no-sort' : ''}`}
+                className={`${c.num ? 'num' : ''} ${c.sortable === false ? 'no-sort' : ''} ${c.hide ? 'hide-' + c.hide : ''}`}
                 onClick={c.sortable === false ? undefined : () => toggle(c.key)}
                 aria-sort={sort.key === c.key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
               >
@@ -177,7 +177,7 @@ export function DataTable({ columns, rows, empty = 'Nothing here yet', initialSo
           {sorted.map((r) => (
             <tr key={rowKey(r)}>
               {columns.map((c) => (
-                <td key={c.key} className={`${c.num ? 'num' : ''} ${c.mono ? 'id' : ''}`}>
+                <td key={c.key} className={`${c.num ? 'num' : ''} ${c.mono ? 'id' : ''} ${c.hide ? 'hide-' + c.hide : ''}`}>
                   {c.render ? c.render(r) : (r[c.key] === null || r[c.key] === undefined || r[c.key] === '' ? '—' : r[c.key])}
                 </td>
               ))}
@@ -228,12 +228,12 @@ export function PlayerPicker({ players, onPick, statuses = ['AVAILABLE'], footer
       <DataTable
         maxHeight="46vh"
         columns={[
-          { key: 'sequence', label: 'Lot', num: true, mono: true },
+          { key: 'sequence', label: 'Lot', num: true, mono: true, hide: 'sm' },
           { key: 'name', label: 'Player', render: (p) => <b style={{ fontWeight: 600 }}>{p.name}</b> },
           { key: 'primaryCategory', label: 'Category', render: (p) => <span className="row tight"><Cat value={p.primaryCategory} />{p.secondaryCategory ? <Cat value={p.secondaryCategory} /> : null}</span> },
-          { key: 'role', label: 'Role' },
+          { key: 'role', label: 'Role', hide: 'sm' },
           { key: 'basePrice', label: 'Base price', num: true, render: (p) => <span className="money">{cr(p.basePrice)}</span> },
-          { key: 'status', label: 'Status', render: (p) => <StatusTag status={p.status} /> },
+          { key: 'status', label: 'Status', hide: 'sm', render: (p) => <StatusTag status={p.status} /> },
           { key: 'pick', label: '', sortable: false, render: (p) => <button className="btn sm primary" onClick={() => onPick(p)}>Put on the block</button> },
         ]}
         rows={list}

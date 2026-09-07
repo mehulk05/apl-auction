@@ -68,16 +68,17 @@ export default function Sold() {
             initialSort={{ key: 'soldPrice', dir: 'desc' }}
             empty="Nothing sold yet."
             columns={[
-              { key: 'sequence', label: 'Lot', num: true, mono: true },
+              { key: 'sequence', label: 'Lot', num: true, mono: true, hide: 'sm' },
               { key: 'name', label: 'Player', render: (p) => <b style={{ fontWeight: 600 }}>{p.name}</b> },
-              { key: 'primaryCategory', label: 'Category', render: (p) => <Cat value={p.primaryCategory} /> },
-              { key: 'role', label: 'Role' },
+              { key: 'primaryCategory', label: 'Category', hide: 'sm', render: (p) => <Cat value={p.primaryCategory} /> },
+              { key: 'role', label: 'Role', hide: 'sm' },
               { key: 'teamName', label: 'Bought by', render: (p) => <Link to={`/teams/${p.teamId}`}>{p.teamName}</Link> },
-              { key: 'basePrice', label: 'Base price', num: true, render: (p) => <span className="money muted">{cr(p.basePrice)}</span> },
+              { key: 'basePrice', label: 'Base price', num: true, hide: 'sm', render: (p) => <span className="money muted">{cr(p.basePrice)}</span> },
               { key: 'soldPrice', label: 'Hammer price', num: true, render: (p) => <b className="money" style={{ fontWeight: 700, fontSize: 14.5 }}>{cr(p.soldPrice)}</b> },
               {
                 key: 'premium',
                 label: 'Over base',
+                hide: 'sm',
                 num: true,
                 render: (p) => (p.premium > 0
                   ? <span className="money" style={{ color: 'var(--brass)' }}>+{cr(p.premium)}</span>
