@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuction, cr } from '../lib/auction.jsx';
 import { Cat, PlayerPeek } from './ui.jsx';
-import { Avatar, TeamCrest, IconClock, RoleIcon, CareerStrip, timeAgo } from './graphics.jsx';
+import { Avatar, TeamCrest, IconClock, RoleIcon, CareerFull, timeAgo } from './graphics.jsx';
 
 /**
  * The spotlight — broadcast style. Left: the player card (jersey, name
@@ -62,7 +62,7 @@ export default function CurrentPlayer() {
                 <div className="tile"><span className="k">Lot no.</span><b className="mono-num">{String(p.sequence).padStart(2, '0')}</b></div>
               </div>
 
-              <CareerStrip player={p} />
+              <CareerFull player={p} />
             </>
           ) : (
             <div className="spot-empty">
