@@ -17,7 +17,7 @@ export const initialsOf = (name = '') =>
 let gid = 0;
 
 /** Team crest: a shield in the team's colour with its initials. */
-export function TeamCrest({ name = '', color = '#5468FF', size = 28 }) {
+export function TeamCrest({ name = '', color = '#6b7280', size = 28 }) {
   const id = React.useMemo(() => `crest${++gid}`, []);
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true" style={{ flexShrink: 0 }}>
@@ -40,7 +40,7 @@ export function TeamCrest({ name = '', color = '#5468FF', size = 28 }) {
 }
 
 /** Player avatar: a jersey with the player's initials on the chest. */
-export function Jersey({ name = '', color = '#5468FF', size = 72 }) {
+export function Jersey({ name = '', color = '#6b7280', size = 72 }) {
   const id = React.useMemo(() => `jersey${++gid}`, []);
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true" style={{ flexShrink: 0 }}>
