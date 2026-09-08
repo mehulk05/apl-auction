@@ -181,45 +181,113 @@ export function Avatar({ name = '', color = '#6b7280', size = 84 }) {
 }
 
 /**
- * Tennis-ball form (dummy, but deterministic): ratings are hashed from the
- * player's id + name, weighted by role, so the same player always shows the
- * same numbers - on every screen, every deploy.
+ * Tennis-ball career (dummy, but deterministic and internally consistent):
+ * every number is hashed from the player's id + name and weighted by role,
+ * and the totals cohere - runs track matches x average, boundaries track
+ * runs - so the same player shows the same believable card everywhere,
+ * after every deploy.
  */
-export function skillsOf(player) {
-  const seedStr = `${player.id}|${player.name}`;
-  let h = 7;
-  for (let i = 0; i < seedStr.length; i++) h = (h * 31 + seedStr.charCodeAt(i)) >>> 0;
-  const pick = (k) => 42 + ((h >> (k * 5)) % 39); // 42..80 base
-  const r = String(player.role || '').toLowerCase();
-  let bat = pick(1); let bowl = pick(2); let field = pick(3);
-  if (r.includes('keep')) { field = Math.min(96, field + 18); bat = Math.min(92, bat + 8); }
-  else if (r.includes('all')) { bat = Math.min(93, bat + 12); bowl = Math.min(93, bowl + 12); }
-  else if (r.includes('bowl')) { bowl = Math.min(96, bowl + 18); }
-  else { bat = Math.min(96, bat + 18); }
-  return [
-    { key: 'Batting', icon: 'bat', v: bat },
-    { key: 'Bowling', icon: 'ball', v: bowl },
-    { key: 'Fielding', icon: 'field', v: field },
-  ];
+export function careerOf(p) {
+  const seedStr = `${p.id}|${p.name}`;
+  let h = 9;
+  for (let i = 0; i < seedStr.length; i++) h = (h * 33 + seedStr.charCodeAt(i)) >>> 0;
+  const r = (k, lo, hi) => lo + (((h >>> (k % 24)) % 1000) / 1000) * (hi - lo);
+
+  const role = String(p.role || '').toLowerCase();
+  const isBowl = role.includes('bowl');
+  const isAll = role.includes('all');
+  const isWk = role.includes('keep');
+  const isBat = !isBowl && !isAll && !isWk;
+
+  const matches = Math.round(r(1, 42, 138));
+  const avg = r(3, isBat ? 26 : isWk ? 22 : isAll ? 20 : 12, isBat ? 42 : isWk ? 34 : isAll ? 32 : 20);
+  const runs = Math.round(matches * avg * r(5, 0.72, 0.92));
+  const sr = r(7, isBat ? 125 : 110, isBat ? 168 : 148);
+  const fours = Math.round(runs * r(9, 0.055, 0.095));
+  const sixes = Math.round(runs * r(11, 0.045, 0.09));
+  const thirties = Math.round(matches * r(13, 0.08, 0.2));
+  const fifties = Math.max(0, Math.round(thirties * r(15, 0.25, 0.5)));
+
+  const wickets = Math.round(matches * (isBowl ? r(2, 0.9, 1.5) : isAll ? r(2, 0.5, 0.9) : isWk ? r(2, 0, 0.05) : r(2, 0.06, 0.18)));
+  const overs = Math.round(matches * (isBowl ? r(4, 2.6, 3.6) : isAll ? r(4, 1.6, 2.6) : isWk ? r(4, 0.05, 0.3) : r(4, 0.3, 1)));
+  const econ = r(6, isBowl ? 5.6 : 6.4, isBowl ? 7.4 : 9.4);
+  const bestW = Math.min(5, Math.max(1, Math.round((wickets / matches) * 3) + (isBowl ? 2 : 1)));
+  const bestR = Math.round(r(8, 6, 26));
+  const threeW = Math.round(wickets * r(10, 0.05, 0.12));
+
+  const catches = Math.round(matches * r(12, 0.25, 0.55));
+  const runouts = Math.round(matches * r(14, 0.06, 0.16));
+  const stumpings = isWk ? Math.round(matches * r(16, 0.2, 0.4)) : 0;
+
+  return {
+    matches,
+    batting: { runs, avg, sr, fours, sixes, thirties, fifties },
+    bowling: { overs, wickets, econ, best: `${bestW}/${bestR}`, threeW },
+    fielding: { catches, runouts, stumpings },
+  };
 }
 
-/** Skill meters - the best trait glows gold. */
-export function SkillBars({ player }) {
-  const skills = skillsOf(player);
-  const top = Math.max(...skills.map((s) => s.v));
+const nIN = (x) => Number(x).toLocaleString('en-IN');
+const n1 = (x) => Number(x).toFixed(1);
+
+function TileGrid({ items }) {
   return (
-    <div className="skills">
-      <div className="skills-k"><IconBall size={11} /> Tennis-ball form</div>
-      {skills.map((s) => (
-        <div className="skill" key={s.key}>
-          <span className="lbl">
-            {s.icon === 'bat' ? <IconBat size={12} /> : s.icon === 'ball' ? <IconBall size={12} /> : <IconStumps size={12} />}
-            {s.key}
-          </span>
-          <span className="bar"><i style={{ width: `${s.v}%`, background: s.v === top ? 'var(--brass)' : 'var(--ink-3)' }} /></span>
-          <span className="num">{s.v}</span>
-        </div>
+    <div className="spot-tiles">
+      {items.map(([k, v]) => (
+        <div className="tile" key={k}><span className="k">{k}</span><b className="money">{v}</b></div>
       ))}
+    </div>
+  );
+}
+
+/** Compact career strip for the spotlight - the reference's stat row. */
+export function CareerStrip({ player }) {
+  const c = careerOf(player);
+  return (
+    <div className="career">
+      <div className="skills-k"><IconBall size={11} /> Tennis-ball career</div>
+      <TileGrid items={[
+        ['Matches', nIN(c.matches)],
+        ['Runs', nIN(c.batting.runs)],
+        ['Average', n1(c.batting.avg)],
+        ['Strike rate', n1(c.batting.sr)],
+        ['Wickets', nIN(c.bowling.wickets)],
+        ['Economy', n1(c.bowling.econ)],
+      ]} />
+    </div>
+  );
+}
+
+/** The full card for the player profile: batting, bowling, fielding. */
+export function CareerFull({ player }) {
+  const c = careerOf(player);
+  const fielding = [
+    ['Catches', nIN(c.fielding.catches)],
+    ['Run-outs', nIN(c.fielding.runouts)],
+  ];
+  if (c.fielding.stumpings) fielding.push(['Stumpings', nIN(c.fielding.stumpings)]);
+  return (
+    <div className="career">
+      <div className="skills-k"><IconBat size={11} /> Batting — {nIN(c.matches)} matches</div>
+      <TileGrid items={[
+        ['Runs', nIN(c.batting.runs)],
+        ['Average', n1(c.batting.avg)],
+        ['Strike rate', n1(c.batting.sr)],
+        ['4s', nIN(c.batting.fours)],
+        ['6s', nIN(c.batting.sixes)],
+        ['30s', nIN(c.batting.thirties)],
+        ['50s', nIN(c.batting.fifties)],
+      ]} />
+      <div className="skills-k" style={{ marginTop: 14 }}><IconBall size={11} /> Bowling</div>
+      <TileGrid items={[
+        ['Overs', nIN(c.bowling.overs)],
+        ['Wickets', nIN(c.bowling.wickets)],
+        ['Economy', n1(c.bowling.econ)],
+        ['Best', c.bowling.best],
+        ['3-wkt hauls', nIN(c.bowling.threeW)],
+      ]} />
+      <div className="skills-k" style={{ marginTop: 14 }}><IconStumps size={11} /> Fielding</div>
+      <TileGrid items={fielding} />
     </div>
   );
 }

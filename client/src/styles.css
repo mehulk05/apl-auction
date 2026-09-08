@@ -783,7 +783,6 @@ table.data td.id { font: 400 11.5px/1 var(--mono); color: var(--ink-3); letter-s
   color: var(--ink);
   background: linear-gradient(90deg, var(--fill), rgba(32, 32, 37, 0));
   border: 1px solid var(--rule);
-  border-left: 4px solid var(--brass);
   border-radius: 6px;
   padding: 9px 16px;
   cursor: pointer; text-align: left;
@@ -856,6 +855,10 @@ table.data td.id { font: 400 11.5px/1 var(--mono); color: var(--ink-3); letter-s
 .linklike:hover { color: var(--brass); }
 
 /* ------------------------------------------------------- tennis-ball form */
+
+.career { margin-top: 16px; }
+.career .spot-tiles { margin-top: 8px; }
+.career .spot-tiles b { font-size: 15px; }
 
 .skills {
   margin-top: 14px;

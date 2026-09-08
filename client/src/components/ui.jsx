@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuction, cr } from '../lib/auction.jsx';
-import { Avatar, TeamCrest, IconClock, RoleIcon, SkillBars, timeAgo } from './graphics.jsx';
+import { Avatar, TeamCrest, IconClock, RoleIcon, CareerFull, timeAgo } from './graphics.jsx';
 
 export function Cat({ value }) {
   if (!value) return null;
@@ -173,7 +173,7 @@ export function PlayerPeek({ player, onClose }) {
         <div className="tile"><span className="k">Times offered</span><b>{player.timesAuctioned}</b></div>
       </div>
 
-      <SkillBars player={player} />
+      <CareerFull player={player} />
 
       {player.notes ? <p className="small muted" style={{ margin: '12px 0 0' }}>{player.notes}</p> : null}
 
