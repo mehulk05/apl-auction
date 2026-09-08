@@ -855,6 +855,40 @@ table.data td.id { font: 400 11.5px/1 var(--mono); color: var(--ink-3); letter-s
 }
 .linklike:hover { color: var(--brass); }
 
+/* ------------------------------------------------------- tennis-ball form */
+
+.skills {
+  margin-top: 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-ctl);
+  padding: 12px 14px 13px;
+  background: var(--card);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.skills-k {
+  display: flex; align-items: center; gap: 6px;
+  font: 700 9.5px/1 var(--sans); letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink-3);
+  margin-bottom: 2px;
+}
+.skill { display: flex; align-items: center; gap: 10px; }
+.skill .lbl {
+  display: flex; align-items: center; gap: 6px;
+  width: 86px; flex-shrink: 0;
+  font-size: 12px; color: var(--ink-2);
+}
+.skill .bar {
+  flex: 1; height: 5px; background: var(--rule-soft);
+  border-radius: 99px; overflow: hidden;
+}
+.skill .bar i { display: block; height: 100%; border-radius: 99px; transition: width .5s ease; }
+.skill .num {
+  width: 26px; text-align: right;
+  font: 600 12px/1 var(--sans); font-variant-numeric: tabular-nums;
+}
+
+.tag svg { vertical-align: -2px; }
+
 /* --------------------------------------------------- simple saleroom bits */
 
 .room { max-width: 1080px; margin: 0 auto; width: 100%; }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuction, cr } from '../lib/auction.jsx';
 import { Cat, PlayerPeek } from './ui.jsx';
-import { Jersey, TeamCrest, IconClock, timeAgo } from './graphics.jsx';
+import { Avatar, TeamCrest, IconClock, RoleIcon, SkillBars, timeAgo } from './graphics.jsx';
 
 /**
  * The spotlight — broadcast style. Left: the player card (jersey, name
@@ -41,7 +41,7 @@ export default function CurrentPlayer() {
           {p ? (
             <>
               <div className="spot-id">
-                <Jersey name={p.name} color={leader ? leader.color : 'var(--blue-raw)'} size={84} />
+                <Avatar name={p.name} color={leader ? leader.color : '#6b7280'} size={84} />
                 <div style={{ minWidth: 0 }}>
                   <button type="button" className="name-banner" onClick={() => setPeek(true)}
                     title="Open the player profile">
@@ -49,7 +49,7 @@ export default function CurrentPlayer() {
                   </button>
                   <div className="row tight" style={{ marginTop: 9, flexWrap: 'wrap' }}>
                     <Cat value={p.primaryCategory} />
-                    <span className="tag">{p.role}</span>
+                    <span className="tag"><RoleIcon role={p.role} size={12} /> {p.role}</span>
                     {p.timesAuctioned > 1 ? <span className="tag warn">Re-offered</span> : null}
                   </div>
                 </div>
@@ -61,6 +61,8 @@ export default function CurrentPlayer() {
                 <div className="tile"><span className="k">Role</span><b>{p.role}</b></div>
                 <div className="tile"><span className="k">Lot no.</span><b className="mono-num">{String(p.sequence).padStart(2, '0')}</b></div>
               </div>
+
+              <SkillBars player={p} />
             </>
           ) : (
             <div className="spot-empty">

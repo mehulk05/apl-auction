@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuction, cr } from '../lib/auction.jsx';
-import { Jersey, TeamCrest, IconClock, timeAgo } from './graphics.jsx';
+import { Avatar, TeamCrest, IconClock, RoleIcon, SkillBars, timeAgo } from './graphics.jsx';
 
 export function Cat({ value }) {
   if (!value) return null;
@@ -148,12 +148,12 @@ export function PlayerPeek({ player, onClose }) {
   return (
     <Modal title="Player profile" onClose={onClose}>
       <div className="profile-head">
-        <Jersey name={player.name} color={team ? team.color : 'var(--blue-raw)'} size={92} />
+        <Avatar name={player.name} color={team ? team.color : '#6b7280'} size={92} />
         <div style={{ minWidth: 0 }}>
           <div className="name-banner static">{player.name}</div>
           <div className="row tight" style={{ marginTop: 9, flexWrap: 'wrap' }}>
             <Cat value={player.primaryCategory} />
-            <span className="tag">{player.role}</span>
+            <span className="tag"><RoleIcon role={player.role} size={12} /> {player.role}</span>
             <span className="lot-no">Lot {String(player.sequence).padStart(2, '0')}</span>
           </div>
         </div>
@@ -172,6 +172,8 @@ export function PlayerPeek({ player, onClose }) {
         <div className="tile"><span className="k">Status</span><b>{player.status === 'SOLD' ? 'Sold' : player.status === 'UNSOLD' ? 'Unsold' : player.status === 'IN_AUCTION' ? 'On the block' : player.status === 'REMOVED' ? 'Withdrawn' : 'In catalogue'}</b></div>
         <div className="tile"><span className="k">Times offered</span><b>{player.timesAuctioned}</b></div>
       </div>
+
+      <SkillBars player={player} />
 
       {player.notes ? <p className="small muted" style={{ margin: '12px 0 0' }}>{player.notes}</p> : null}
 
